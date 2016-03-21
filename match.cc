@@ -64,12 +64,12 @@ int main() {
 
 	std::multimap<loc, latlon *> map;
 
-	FILE *f = fopen("sf-intersections", "r");
+	FILE *f = fopen("/data/data/tiger/all-corners", "r");
 	while (fgets(s, 2000, f)) {
 		char name[2000];
 		double lat, lon;
 
-		if (sscanf(s, "%[^,],%lf,%lf", name, &lat, &lon) != 3) {
+		if (sscanf(s, "%lf %lf", &lat, &lon) != 2) {
 			fprintf(stderr, "??? %s\n", s);
 			continue;
 		}
@@ -84,7 +84,7 @@ int main() {
 	}
 	fclose(f);
 
-	int seq;
+	int seq = 0;
 	int opercent = -1;
 
 	f = fopen("all-employment-2013", "r");
