@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+
+mkdir "2013";
+
+@states = (
+	"ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl", "ga", "hi", "ia", "id", "il",
+	"in", "ks", "ky", "la", "ma", "md", "me", "mi", "mn", "mo", "ms", "mt", "nc", "nd", "ne",
+	"nh", "nj", "nm", "nv", "ny", "oh", "ok", "or", "pa", "pr", "ri", "sc", "sd", "tn", "tx",
+	"ut", "va", "vi", "vt", "wa", "wi", "wv", "wy", 
+);
+
+for $state (@states) {
+	mkdir "2013";
+	mkdir "2013/lehd.ces.census.gov";
+	mkdir "2013/lehd.ces.census.gov/data";
+	mkdir "2013/lehd.ces.census.gov/data/lodes";
+	mkdir "2013/lehd.ces.census.gov/data/lodes/LODES7";
+	mkdir "2013/lehd.ces.census.gov/data/lodes/LODES7/$state";
+
+	system "curl -L -o 2013/lehd.ces.census.gov/data/lodes/LODES7/$state/${state}_xwalk.csv.gz http://lehd.ces.census.gov/data/lodes/LODES7/$state/${state}_xwalk.csv.gz";
+
+	for $kind ('wac_S000', 'rac_S000', 'od_main') {
+		$kind1 = $kind;
+		$kind1 =~ s/_.*//;
+
+		mkdir "2013/lehd.ces.census.gov/data/lodes/LODES7/$state/$kind1";
+
+		print "curl -L -o 2013/lehd.ces.census.gov/data/lodes/LODES7/$state/$kind1/${state}_${kind}_JT00_2013.csv.gz http://lehd.ces.census.gov/data/lodes/LODES7/$state/$kind1/${state}_${kind}_JT00_2013.csv.gz";
+		print "\n";
+
+		system "curl -L -o 2013/lehd.ces.census.gov/data/lodes/LODES7/$state/$kind1/${state}_${kind}_JT00_2013.csv.gz http://lehd.ces.census.gov/data/lodes/LODES7/$state/$kind1/${state}_${kind}_JT00_2013.csv.gz";
+	}
+}
