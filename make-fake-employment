@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+$pi = 4 * atan2(1, 1);
+$foot = .00000274;
+$radius = 2640 * $foot;
+
+# 785 since pi * (.5 ** 2) == 0.785398163397448
+# and we want 100000 people per square mile as reference
+
+for ($a = 0; $a < 785 * 100; $a++) {
+	$ang = rand(2 * $pi);
+	$dist = sqrt(rand(1));
+
+	$lat = $dist * $radius * sin($ang);
+	$lon = $dist * $radius * cos($ang); # no rat since on the equator
+
+	@fields = ();
+	# employees at 1
+	$fields[1] = 1;
+	$fields[53] = $lat;
+	$fields[54] = $lon + 1;
+	$fields[57] = 0;
+
+	for ($i = 0; $i <= $#fields; $i++) {
+		printf("%f,", $fields[$i]);
+	}
+	print "\n";
+
+	@fields = ();
+	# residents at 2
+	$fields[1] = 0;
+	$fields[53] = $lat;
+	$fields[54] = $lon + 2;
+	$fields[57] = 1;
+
+	for ($i = 0; $i <= $#fields; $i++) {
+		printf("%f,", $fields[$i]);
+	}
+	print "\n";
+}
