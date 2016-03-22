@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include <vector>
@@ -25,11 +26,15 @@ struct latlon {
 	float lat;
 	float lon;
 	double count;
+	double count2;
+	char *orig;
 
 	latlon(double _lat, double _lon, double _count) {
 		lat = _lat;
 		lon = _lon;
 		count = _count;
+		count2 = _count;
+		orig = NULL;
 	}
 };
 
@@ -64,7 +69,7 @@ int main() {
 
 	std::multimap<loc, latlon *> map;
 
-	FILE *f = fopen("/data/data/tiger/all-corners", "r");
+	FILE *f = fopen("station-corners", "r");
 	while (fgets(s, 2000, f)) {
 		char name[2000];
 		double lat, lon;
@@ -79,6 +84,7 @@ int main() {
 		loc.o = lon / BUCKET;
 
 		struct latlon *ll = new latlon(lat, lon, 0);
+		ll->orig = strdup(s);
 
 		map.insert(std::pair<struct loc, struct latlon *>(loc, ll));
 	}
@@ -151,13 +157,14 @@ int main() {
 					workweight *= 0.863528;
 					homeweight *= 1.58911;
 
-					it->second->count += workweight * fields[1] + homeweight * fields[57];
+					it->second->count += workweight * fields[1];
+					it->second->count2 += homeweight * fields[57];
 				}
 			}
 		}
 	}
 
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		printf("%f,%f %f\n", it->second->lat, it->second->lon, it->second->count);
+		printf("%f,%f %f %f %s\n", it->second->lat, it->second->lon, it->second->count, it->second->count2, it->second->orig);
 	}
 }
