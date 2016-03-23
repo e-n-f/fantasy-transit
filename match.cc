@@ -34,7 +34,7 @@ struct latlon {
 };
 
 #define FOOT 0.00000274
-#define BUCKET (2640 * FOOT / .8)
+#define BUCKET (2640 * FOOT)
 #define RADIUS (2640 * FOOT)
 
 double fpow(double b, double e) {
@@ -66,7 +66,6 @@ int main() {
 
 	FILE *f = fopen("/data/data/tiger/all-corners", "r");
 	while (fgets(s, 2000, f)) {
-		char name[2000];
 		double lat, lon;
 
 		if (sscanf(s, "%lf %lf", &lat, &lon) != 2) {
@@ -76,7 +75,8 @@ int main() {
 
 		struct loc loc;
 		loc.a = lat / BUCKET;
-		loc.o = lon / BUCKET;
+		double rat = cos(loc.a * BUCKET * M_PI / 180);
+		loc.o = lon / (BUCKET / rat);
 
 		struct latlon *ll = new latlon(lat, lon, 0);
 
@@ -115,10 +115,12 @@ int main() {
 		double rat = cos(lat * M_PI / 180);
 
 		int a = lat / BUCKET;
-		int o = lon / BUCKET;
 
 		int aa, oo;
 		for (aa = a - 1; aa <= a + 1; aa++) {
+			double brat = cos(aa * BUCKET * M_PI / 180);
+			int o = lon / (BUCKET / brat);
+
 			for (oo = o - 1; oo <= o + 1; oo++) {
 				struct loc l;
 				l.a = aa;
@@ -148,8 +150,8 @@ int main() {
 						      (10 * (pdf(dist, 137748, 7757, 3.8884, 0.0558907) +
 							     pdf(dist, 13593.1, 39918.2, 27.3165, 0.342803)));
 
-					workweight *= 0.863528;
-					homeweight *= 1.58911;
+					// workweight *= 0.863528;
+					// homeweight *= 1.58911;
 
 					it->second->count += workweight * fields[1] + homeweight * fields[57];
 				}
@@ -158,6 +160,8 @@ int main() {
 	}
 
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		printf("%f,%f %f\n", it->second->lat, it->second->lon, it->second->count);
+		if (it->second->count > 0) {
+			printf("%f,%f %f\n", it->second->lat, it->second->lon, it->second->count);
+		}
 	}
 }
