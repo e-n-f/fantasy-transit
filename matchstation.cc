@@ -22,18 +22,20 @@ struct loc {
 	}
 };
 
+#define FIELDS 80
+
 struct latlon {
 	float lat;
 	float lon;
-	double count;
-	double count2;
+	double count[FIELDS];
 	char *orig;
 
 	latlon(double _lat, double _lon, double _count) {
 		lat = _lat;
 		lon = _lon;
-		count = _count;
-		count2 = _count;
+		for (int i = 0; i < FIELDS; i++) {
+			count[i] = _count;
+		}
 		orig = NULL;
 	}
 };
@@ -64,6 +66,14 @@ double pdf(double x, double a, double u, double o, double l) {
 	return a * (fpow(x, l - 1)) / (boxcox(o, l) * sqrt(2 * M_PI)) * exp(- fpow(boxcox(x, l) - boxcox(u, l), 2) / (2 * fpow(boxcox(o, l), 2)));
 }
 
+void chomp(char *s) {
+	for (; *s; s++) {
+		if (*s == '\n') {
+			*s = '\0';
+		}
+	}
+}
+
 int main() {
 	char s[2000];
 
@@ -71,7 +81,6 @@ int main() {
 
 	FILE *f = fopen("station-corners", "r");
 	while (fgets(s, 2000, f)) {
-		char name[2000];
 		double lat, lon;
 
 		if (sscanf(s, "%lf %lf", &lat, &lon) != 2) {
@@ -85,6 +94,7 @@ int main() {
 
 		struct latlon *ll = new latlon(lat, lon, 0);
 		ll->orig = strdup(s);
+		chomp(ll->orig);
 
 		map.insert(std::pair<struct loc, struct latlon *>(loc, ll));
 	}
@@ -154,17 +164,24 @@ int main() {
 						      (10 * (pdf(dist, 137748, 7757, 3.8884, 0.0558907) +
 							     pdf(dist, 13593.1, 39918.2, 27.3165, 0.342803)));
 
-					workweight *= 0.863528;
-					homeweight *= 1.58911;
+					for (size_t i = 0; i < FIELDS && i < fields.size(); i++) {
+						double weight = workweight;
+						if (i == 57) {
+							weight = homeweight;
+						}
 
-					it->second->count += workweight * fields[1];
-					it->second->count2 += homeweight * fields[57];
+						it->second->count[i] += fields[i] * weight;
+					}
 				}
 			}
 		}
 	}
 
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		printf("%f,%f %f %f %s\n", it->second->lat, it->second->lon, it->second->count, it->second->count2, it->second->orig);
+		printf("%f,%f %s", it->second->lat, it->second->lon, it->second->orig);
+		for (int i = 0; i < FIELDS; i++) {
+			printf(" %f", it->second->count[i]);
+		}
+		printf("\n");
 	}
 }
