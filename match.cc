@@ -181,6 +181,7 @@ int main() {
 	std::multimap<loc, latlon *> seen;
 	for (size_t i = 0; i < possible.size(); i++) {
 		double closest = INT_MAX;
+		double closecount = 0;
 
 		double lat = possible[i]->lat;
 		double lon = possible[i]->lon;
@@ -208,13 +209,20 @@ int main() {
 						double d = sqrt(dsq);
 						if (d < closest) {
 							closest = d;
+							closecount = it->second->count;
 						}
 					}
 				}
 			}
 		}
 
-		double min = 2640 * FOOT / (sqrt(possible[i]->count) / sqrt(5000));
+		if (closecount == 0) {
+			closecount = possible[i]->count;
+		} else {
+			closecount = sqrt(possible[i]->count * closecount);
+		}
+
+		double min = 5280 * FOOT / (sqrt(closecount) / sqrt(5000));
 		if (min < 1320 * FOOT) {
 			min = 1320 * FOOT;
 		}
