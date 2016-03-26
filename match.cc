@@ -39,7 +39,7 @@ struct latlon {
 #define BUCKET (2640 * FOOT)
 #define RADIUS (2640 * FOOT)
 
-#define BUCKET2 (5280 * 2 * FOOT)
+#define BUCKET2 (5280 * 3 * FOOT)
 
 double fpow(double b, double e) {
 	if (b == 0) {
@@ -69,13 +69,17 @@ struct countcmp {
         }
 } countcmp;
 
+double scale(double v) {
+	return exp(log(v) * .7);
+}
+
 int main() {
 	char s[2000];
 
 	std::multimap<loc, latlon *> map;
 
-	// FILE *f = fopen("/data/data/tiger/all-corners", "r");
-	FILE *f = fopen("all-corners-37-122", "r");
+	FILE *f = fopen("/data/data/tiger/all-corners", "r");
+	// FILE *f = fopen("all-corners-37-122", "r");
 	while (fgets(s, 2000, f)) {
 		double lat, lon;
 
@@ -172,7 +176,7 @@ int main() {
 
 	std::vector<latlon *> possible;
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		if (it->second->count > 1000) {
+		if (it->second->count > 1250) {
 			possible.push_back(it->second);
 		}
 	}
@@ -216,13 +220,17 @@ int main() {
 			}
 		}
 
+		if (closest > BUCKET2) {
+			closest = BUCKET2;
+		}
+
 		if (closecount == 0) {
 			closecount = possible[i]->count;
 		} else {
 			closecount = sqrt(possible[i]->count * closecount);
 		}
 
-		double min = 5280 * FOOT / (sqrt(closecount) / sqrt(5000));
+		double min = 5280 * FOOT / (scale(closecount) / scale(5000));
 		if (min < 1320 * FOOT) {
 			min = 1320 * FOOT;
 		}
