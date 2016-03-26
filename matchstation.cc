@@ -178,10 +178,10 @@ int main() {
 	}
 
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		printf("%f,%f %s", it->second->lat, it->second->lon, it->second->orig);
-		for (int i = 0; i < FIELDS; i++) {
+		printf("%f,%f", it->second->lat, it->second->lon);
+		for (int i = 1; i < FIELDS; i++) {
 			printf(" %f", it->second->count[i]);
 		}
-		printf("\n");
+		printf(" %s\n", it->second->orig);
 	}
 }
