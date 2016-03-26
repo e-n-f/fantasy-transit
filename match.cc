@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 #include <vector>
 #include <map>
+#include <algorithm>
 
 struct loc {
 	int a;
@@ -37,6 +39,8 @@ struct latlon {
 #define BUCKET (2640 * FOOT)
 #define RADIUS (2640 * FOOT)
 
+#define BUCKET2 (5280 * 2 * FOOT)
+
 double fpow(double b, double e) {
 	if (b == 0) {
 		return 0;
@@ -59,12 +63,19 @@ double pdf(double x, double a, double u, double o, double l) {
 	return a * (fpow(x, l - 1)) / (boxcox(o, l) * sqrt(2 * M_PI)) * exp(- fpow(boxcox(x, l) - boxcox(u, l), 2) / (2 * fpow(boxcox(o, l), 2)));
 }
 
+struct countcmp {
+        bool operator()(struct latlon *const &a, struct latlon *const &b) {
+                return b->count < a->count;
+        }
+} countcmp;
+
 int main() {
 	char s[2000];
 
 	std::multimap<loc, latlon *> map;
 
-	FILE *f = fopen("/data/data/tiger/all-corners", "r");
+	// FILE *f = fopen("/data/data/tiger/all-corners", "r");
+	FILE *f = fopen("all-corners-37-122", "r");
 	while (fgets(s, 2000, f)) {
 		double lat, lon;
 
@@ -159,9 +170,62 @@ int main() {
 		}
 	}
 
+	std::vector<latlon *> possible;
 	for (std::multimap<loc, latlon *>::iterator it = map.begin(); it != map.end(); ++it) {
-		if (it->second->count > 0) {
-			printf("%f,%f %f\n", it->second->lat, it->second->lon, it->second->count);
+		if (it->second->count > 1000) {
+			possible.push_back(it->second);
+		}
+	}
+	std::sort(possible.begin(), possible.end(), countcmp);
+
+	std::multimap<loc, latlon *> seen;
+	for (size_t i = 0; i < possible.size(); i++) {
+		double closest = INT_MAX;
+
+		double lat = possible[i]->lat;
+		double lon = possible[i]->lon;
+		double rat = cos(lat * M_PI / 180);
+		int a = lat / BUCKET2;
+		int aa, oo;
+		for (aa = a - 1; aa <= a + 1; aa++) {
+			double brat = cos(aa * BUCKET2 * M_PI / 180);
+			int o = lon / (BUCKET2 / brat);
+
+			for (oo = o - 1; oo <= o + 1; oo++) {
+				struct loc l;
+				l.a = aa;
+				l.o = oo;
+
+				std::pair<std::multimap<loc, latlon *>::iterator, std::multimap<loc, latlon *>::iterator> range;
+				range = seen.equal_range(l);
+
+				for (std::multimap<loc, latlon *>::iterator it = range.first; it != range.second; ++it) {
+					double latd = lat - it->second->lat;
+					double lond = (lon - it->second->lon) * rat;
+
+					double dsq = latd * latd + lond * lond;
+					if (dsq < BUCKET2 * BUCKET2) {
+						double d = sqrt(dsq);
+						if (d < closest) {
+							closest = d;
+						}
+					}
+				}
+			}
+		}
+
+		double min = 2640 * FOOT / (sqrt(possible[i]->count) / sqrt(5000));
+		if (min < 1320 * FOOT) {
+			min = 1320 * FOOT;
+		}
+		if (closest > min) {
+			struct loc loc;
+			loc.a = lat / BUCKET2;
+			rat = cos(loc.a * BUCKET2 * M_PI / 180);
+			loc.o = lon / (BUCKET2 / rat);
+
+			printf("%f,%f %f\n", possible[i]->lat, possible[i]->lon, possible[i]->count);
+			seen.insert(std::pair<struct loc, struct latlon *>(loc, possible[i]));
 		}
 	}
 }
